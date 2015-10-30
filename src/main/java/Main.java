@@ -10,6 +10,7 @@ public class Main {
     static SerialPort serialPort;
 
     public static void main(String[] args){
+
         String[] portNames = SerialPortList.getPortNames();
         for(int i = 0; i < portNames.length; i++){
             System.out.println(portNames[i]);
@@ -29,9 +30,6 @@ public class Main {
 
             buffer = serialPort.readBytes(34);
             System.out.print(new String(buffer, StandardCharsets.UTF_8));
-
-//            buffer = serialPort.readBytes(34);
-//            System.out.print(new String(buffer, StandardCharsets.UTF_8));
 
             int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR;//Prepare mask
             serialPort.setEventsMask(mask);//Set mask
