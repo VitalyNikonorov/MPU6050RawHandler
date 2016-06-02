@@ -1,12 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 import jssc.*;
 
-import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
 
 /**
  *
@@ -30,24 +26,42 @@ public class MainFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButton1 = new javax.swing.JButton();
-        textArea1 = new java.awt.TextArea();
+        connectBtn = new javax.swing.JButton();
+        dataList = new java.awt.TextArea();
         portList = new java.awt.List();
-        jButton2 = new javax.swing.JButton();
+        scanBtn = new javax.swing.JButton();
+        disconnectBtn = new javax.swing.JButton();
+        btn3D = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jButton1.setText("Connect");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        connectBtn.setText("Connect");
+        connectBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                connectBtnActionPerformed(evt);
             }
         });
 
-        jButton2.setText("Scan");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        scanBtn.setText("Scan");
+        scanBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                scanBtnActionPerformed(evt);
+            }
+        });
+
+        disconnectBtn.setText("Disconnect");
+        disconnectBtn.setActionCommand("");
+        disconnectBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                disconnectBtnActionPerformed(evt);
+            }
+        });
+
+        btn3D.setText("3d on");
+        btn3D.setToolTipText("");
+        btn3D.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn3DActionPerformed(evt);
             }
         });
 
@@ -57,32 +71,38 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addGroup(layout.createSequentialGroup()
-                            .addContainerGap()
-                            .addComponent(textArea1, javax.swing.GroupLayout.DEFAULT_SIZE, 326, Short.MAX_VALUE))
-                        .addGroup(layout.createSequentialGroup()
-                            .addContainerGap()
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(dataList, javax.swing.GroupLayout.DEFAULT_SIZE, 326, Short.MAX_VALUE)
                             .addComponent(portList, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(204, 204, 204)
-                        .addComponent(jButton2))
+                        .addGap(22, 22, 22)
+                        .addComponent(btn3D)
+                        .addGap(85, 85, 85)
+                        .addComponent(scanBtn))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(197, 197, 197)
-                        .addComponent(jButton1)))
+                        .addGap(73, 73, 73)
+                        .addComponent(connectBtn)
+                        .addGap(18, 18, 18)
+                        .addComponent(disconnectBtn)))
                 .addContainerGap(710, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(16, 16, 16)
-                .addComponent(jButton2)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(scanBtn)
+                    .addComponent(btn3D))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(portList, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(23, 23, 23)
-                .addComponent(jButton1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(connectBtn)
+                    .addComponent(disconnectBtn))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(textArea1, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)
+                .addComponent(dataList, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -90,97 +110,89 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
     static SerialPort serialPort;
 
-    static class SerialPortReader implements SerialPortEventListener {
+    Thread inputHandler;
+    public static boolean isReceavingMode = GlobalSettings.STOP;
 
-        public void serialEvent(SerialPortEvent event) {
-            if(event.isRXCHAR()){//If data is available
-                if(event.getEventValue() == 34){//Check bytes count in the input buffer
-                    //Read data, if 10 bytes available
-                    try {
-                        byte buffer[] = serialPort.readBytes(34);
-                        System.out.print(buffer);
-                    }
-                    catch (SerialPortException ex) {
-                        System.out.println(ex);
-                    }
-                }
-            }
-            else if(event.isCTS()){//If CTS line has changed state
-                if(event.getEventValue() == 1){//If line is ON
-                    System.out.println("CTS - ON");
-                }
-                else {
-                    System.out.println("CTS - OFF");
-                }
-            }
-            else if(event.isDSR()){///If DSR line has changed state
-                if(event.getEventValue() == 1){//If line is ON
-                    System.out.println("DSR - ON");
-                }
-                else {
-                    System.out.println("DSR - OFF");
-                }
-            }
-        }
-    }
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {
+    private void scanBtnActionPerformed(java.awt.event.ActionEvent evt) {
+        portList.removeAll();
         String[] portNames = SerialPortList.getPortNames();
         for(int i = 0; i < portNames.length; i++){
             portList.add(portNames[i], i);
         }
     }
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    public static Timer timer;
+
+    private void connectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectBtnActionPerformed
 
         serialPort = new SerialPort(portList.getSelectedItem());
+        //serialPort = new SerialPort("/dev/tty.HC-06-DevB");
+        isReceavingMode = GlobalSettings.RECEIVE;
+
 
         try {
             serialPort.openPort();//Open serial port
-            serialPort.setParams(SerialPort.BAUDRATE_9600,
+            serialPort.setParams(SerialPort.BAUDRATE_38400,
                     SerialPort.DATABITS_8,
                     SerialPort.STOPBITS_1,
                     SerialPort.PARITY_NONE);//Set params. Also you can set params by this string: serialPort.setParams(9600, 8, 1, 0);
-            serialPort.writeBytes("This is a test string".getBytes());//Write data to port
-            serialPort.closePort();//Close serial port
+
+            serialPort.writeString("b");
         }
         catch (SerialPortException ex) {
             System.out.println(ex);
         }
 
+        System.out.println("----------");
         try {
-            serialPort.openPort();//Open port
-            serialPort.setParams(9600, 8, 1, 0);//Set params
-            //serialPort.writeByte((byte) 2);
-            byte[] buffer = serialPort.readBytes(1);
-            System.out.print(new String(buffer, StandardCharsets.UTF_8));
+            System.out.println("CTS : " + new Boolean(serialPort.isCTS()).toString());
+            System.out.println("DSR : " + new Boolean(serialPort.isDSR()).toString());
+            System.out.println("RING : " + new Boolean(serialPort.isRING()).toString());
+            System.out.println("RLSD : " + new Boolean(serialPort.isRLSD()).toString());
+            System.out.println("Opend : " + new Boolean(serialPort.isOpened()).toString());
+        } catch (SerialPortException e) {
+            e.printStackTrace();
+        }
 
-            buffer = serialPort.readBytes(65);
-            System.out.print(new String(buffer, StandardCharsets.UTF_8));
+        inputHandler = new Thread(new InputHandler(serialPort));
+        inputHandler.start();
 
-            System.out.println("\n---------------");
+    }//GEN-LAST:event_connectBtnActionPerformed
 
-            buffer = serialPort.readBytes(34);
-            System.out.print(new String(buffer, StandardCharsets.UTF_8));
-
-            int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR;//Prepare mask
-            serialPort.setEventsMask(mask);//Set mask
-            serialPort.addEventListener(new SerialPortReader());//Add SerialPortEventListener
+    private void disconnectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disconnectBtnActionPerformed
+        try {
+            if(!serialPort.isOpened()){
+                serialPort.openPort();//Open serial port
+                serialPort.setParams(SerialPort.BAUDRATE_38400,
+                        SerialPort.DATABITS_8,
+                        SerialPort.STOPBITS_1,
+                        SerialPort.PARITY_NONE);//Set params. Also you can set params by this string: serialPort.setParams(9600, 8, 1, 0);
+            }
+            isReceavingMode = GlobalSettings.STOP;
+            serialPort.writeString("e");
+            System.out.print("stop");
+            serialPort.closePort();//Close serial port
+            inputHandler = null;
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("mm:ss.SSS");
+            String formattedDate = sdf.format(date);
+            MainFrame.dataList.append(formattedDate + "\n");
         }
         catch (SerialPortException ex) {
             System.out.println(ex);
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_disconnectBtnActionPerformed
+
+    private void btn3DActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn3DActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_btn3DActionPerformed
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -208,9 +220,11 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
+    private javax.swing.JButton btn3D;
+    private javax.swing.JButton connectBtn;
+    public static java.awt.TextArea dataList;
+    private javax.swing.JButton disconnectBtn;
     private java.awt.List portList;
-    private java.awt.TextArea textArea1;
+    private javax.swing.JButton scanBtn;
     // End of variables declaration//GEN-END:variables
 }
