@@ -226,5 +226,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JButton disconnectBtn;
     private java.awt.List portList;
     private javax.swing.JButton scanBtn;
+
+
     // End of variables declaration//GEN-END:variables
 }

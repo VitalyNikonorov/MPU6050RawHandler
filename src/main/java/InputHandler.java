@@ -1,10 +1,7 @@
-import jdk.nashorn.api.scripting.JSObject;
 import jssc.SerialPort;
 import jssc.SerialPortException;
+import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by vitaly on 31.10.15.
@@ -21,59 +18,57 @@ public class InputHandler implements Runnable {
 
     public void run() {
         String str = null;
-        int bracketCount = 0;
-        StringBuilder sb = new StringBuilder();
-
+        String buffer = null;
         try {
             while (MainFrame.isReceavingMode) {
 
                 str = serialPort.readString();
                 if(str != null) {
-//                    System.out.print(str);
-//                    if (isFirst){
-//                        Date date = new Date();
-//                        SimpleDateFormat sdf = new SimpleDateFormat("mm:ss.SSS");
-//                        String formattedDate = sdf.format(date);
-//                        MainFrame.dataList.append(formattedDate + "\n");
-//                        isFirst = false;
-//                    }
+                    //System.out.println("///////\n"+str); //needlog
+                    //System.out.println("///////"); //needlog
+                    String[] splitted = str.split("\n");
 
-                    for( int i = 0; i < str.length(); i++ ) {
-                        if( str.charAt(i) == '{' ) {
-                            bracketCount++;
-                        }else if( str.charAt(i) == '}') {
-                            if (bracketCount > 0) {
-                                bracketCount--;
-                            } else {
-                                bracketCount = 0;
+                    for (int i = 0; i < splitted.length; ++i){
+                        //System.out.println("splitted: "+splitted[i]); //needlog
+                        if(splitted[i].length() > 0) {
+                            if (splitted[i].charAt(0) != '{') {
+                                if (buffer != null) {
+                                    splitted[i] = buffer + splitted[i];
+                                } else {
+                                    continue;
+                                }
+                            }
+                        } else {
+                            continue;
+                        }
+
+                        if (splitted[i].lastIndexOf('{') == 0) {
+                            if(splitted[i].length()>2) {
+                                if ((splitted[i].charAt(0) == '{') && (splitted[i].charAt(splitted[i].length() - 2) == '}')) {
+//                                    System.out.println("json: " + splitted[i]); //туувдщп
+                                    MainFrame.dataList.append(splitted[i] + "\n");
+                                    try {
+                                        JSONObject jsonObject = new JSONObject(splitted[i]);
+                                        operator.addData(jsonObject);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    //System.out.println("gone"); //needlog
+                                    buffer = "";
+                                } else {
+                                    buffer = splitted[i];
+                                }
+                            }else {
+                                buffer = splitted[i];
                             }
                         }
-                    }
 
-                    if( bracketCount < 1 ){
-                        sb.append(str);
-                        //Log.i(LOG_TAG, "I RECEIVE IT: " + sb.toString());
-
-//                        sendIncomingData(sb.toString());
-
-                        JSONObject jsonObject = new JSONObject(sb.toString());
-                        operator.addData(jsonObject);
-                        System.out.println("gone");
-//                        System.out.println(String.format("ax %d ay %d az %d gx %d gy %d gz %d", jsonObject.getInt("ax"),
-//                                jsonObject.getInt("ay"), jsonObject.getInt("az"), jsonObject.getInt("gx"), jsonObject.getInt("gy"), jsonObject.getInt("gz")));
-//                        System.out.println(sb.toString());
-
-                        sb.setLength(0);
-                        bracketCount = 0;
-                    }else{
-                        sb.append(str);
                     }
                 }
-                MainFrame.dataList.append(str);
+//                MainFrame.dataList.append(str);
             }
         }
-        catch (
-                SerialPortException ex) {
+        catch (SerialPortException ex) {
             System.out.println(ex);
         }
     }
